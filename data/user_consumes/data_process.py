@@ -11,22 +11,19 @@ print("数据集结构:")
 
 print(ds.count())
 
-# 2. 过滤高价商品（price > 100）
-filtered_ds = ds.filter(lambda row: row['price'] > 100)
-
-# 3. 添加新字段：每笔订单的总价
-ds_with_total = filtered_ds.map(lambda row: {
+# 2. 添加新字段：每笔订单的总价
+ds_with_total = ds.map(lambda row: {
     **row,
     "total": row['price'] * row['quantity']
 })
 
-# 4. 按 user_id 聚合，计算每个用户的总消费
+# 3. 按 user_id 聚合，计算每个用户的总消费
 aggregated_ds = ds_with_total.groupby("user_id").sum("total")
 
-# 5. 按总消费排序，取前 10 名
+# 4. 按总消费排序，取前 10 名
 top_users = aggregated_ds.sort("sum(total)", descending=True).limit(10)
 
-# 6. 输出结果
+# 5. 输出结果
 print("\n消费最高的 10 位用户:")
 for row in top_users.iter_rows():
     print(f"{row['user_id']}: ¥{row['sum(total)']:.2f}")

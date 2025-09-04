@@ -21,6 +21,7 @@ def merge_results(*partial_results: List[Dict[str, int]]) -> Dict[str, int]:
             total_count[word] += count
     return dict(total_count)
 
+# 数据前置处理
 def read_and_split_file(file_path: str, num_chunks: int = None) -> List[str]:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"文件未找到: {file_path}")
@@ -50,6 +51,7 @@ def word_count(input_paths: List[str], output_path: str):
 
     for file_path in input_paths:
         chunks = read_and_split_file(file_path)
+        # map阶段
         chunk_futures = [count_words_in_chunk.remote(chunk) for chunk in chunks]
         all_futures.extend(chunk_futures)
 
@@ -76,7 +78,6 @@ def word_count(input_paths: List[str], output_path: str):
 if __name__ == "__main__":
     file1 = 'text1.txt'
     file2 = 'text2.txt'
-
 
     input_files = [file1, file2]
     output_file = 'word_count_output.txt'

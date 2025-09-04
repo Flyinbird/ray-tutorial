@@ -32,13 +32,6 @@ def wordcount_with_ray_data(input_paths: List[str], output_path: str):
             words_list.append(words)
         return {"words": words_list}
 
-    # 执行分词操作
-    word_ds = ds.map_batches(
-        split_lines,
-        batch_size=1000,
-        batch_format="pandas"
-    )
-
     # Step 3: 扁平化 - 将单词列表展开
     def flatten_words(batch: Dict[str, List]) -> Dict[str, List]:
         """将嵌套的单词列表展开为扁平列表"""
@@ -47,21 +40,20 @@ def wordcount_with_ray_data(input_paths: List[str], output_path: str):
             all_words.extend(words)
         return {"word": all_words}
 
-    flat_ds = word_ds.map_batches(
+    # Step 3: 流式处理
+    word_ds = ds.map_batches(
+        split_lines,
+        batch_size=1000,
+        batch_format="pandas"
+    ).map_batches(
         flatten_words,
         batch_size=1000,
         batch_format="pandas"
-    )
+    ).groupby("word").count()
 
-    # Step 4: 统计词频 - 使用 Ray Data 的内置聚合功能
-    print("开始统计词频...")
-
-    # 使用 groupby 进行统计（推荐）
-    word_count_ds = flat_ds.groupby("word").count()
-
-    # 转换为字典格式
+    # Step 4:转换为字典格式
     word_count_dict = {}
-    for batch in word_count_ds.iter_batches():
+    for batch in word_ds.iter_batches():
         for word, count in zip(batch["word"], batch["count()"]):
             word_count_dict[word] = count
 
